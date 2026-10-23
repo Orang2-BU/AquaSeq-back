@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"aquaseq-back/internal/domain"
@@ -26,17 +25,65 @@ func (s *AppService) CalculateSDRI(input domain.SDRIInput) domain.SDRIResult {
 	return sdri.Calculate(input)
 }
 
-// IngestSample computes subscores, checks PPC, calculates SDRI, and persists the record.
-// ponytail: deterministic sub-score heuristic from 12 features; calibrate against GSI lab curves in Q1 pilot.
+// IngestSample computes subscores from 12 features via exact lab stoichiometry, checks PPC, and persists.
+// ponytail: deterministic sub-scores calculated directly from lab stoichiometry; calibrate weights per cycle outcome.
 func (s *AppService) IngestSample(ctx context.Context, sample domain.Sample) (domain.SDRIResult, error) {
 	if sample.ID == "" {
 		sample.ID = fmt.Sprintf("smp-%d", time.Now().UnixNano())
 	}
 
-	// Derive S_qPCR, S_Bio, S_Chem from raw features
-	sQPCR := deriveQPCRScore(sample.Features)
-	sBio := deriveBioScore(sample.Features)
-	sChem := deriveChemScore(sample.Features)
+	// 1. Calculate un-ionized toxic free ammonia NH3-N via Emerson et al.
+	temp := 30.0
+	if sample.Features.TempC != nil && *sample.Features.TempC > 0 {
+		temp = *sample.Features.TempC
+	}
+	ph := 7.8
+	if sample.Features.PH != nil && *sample.Features.PH > 0 {
+		ph = *sample.Features.PH
+	}
+	tan := 0.0
+	if sample.Features.TANMgL != nil {
+		tan = *sample.Features.TANMgL
+	}
+	_, _, freeNH3 := sdri.CalculateFreeAmmonia(tan, temp, ph)
+
+	// 2. Calculate copy numbers per mL for pathogens & bioindicators
+	var copyAHPND, copyWSSV, copyEHP, copyAmoA float64
+	if sample.Features.CTAHPND != nil {
+		copyAHPND = sdri.CTToCopiesPerML(*sample.Features.CTAHPND)
+	}
+	if sample.Features.CTWSSV != nil {
+		copyWSSV = sdri.CTToCopiesPerML(*sample.Features.CTWSSV)
+	}
+	if sample.Features.CTEHP != nil {
+		copyEHP = sdri.CTToCopiesPerML(*sample.Features.CTEHP)
+	}
+	totalPathogenCopy := copyAHPND + copyWSSV + copyEHP
+
+	if sample.Features.CTamoA != nil {
+		copyAmoA = sdri.CTToCopiesPerML(*sample.Features.CTamoA)
+		if copyAmoA <= 0 && *sample.Features.CTamoA > 0 && *sample.Features.CTamoA < 40 {
+			copyAmoA = 100.0 // Baseline
+		}
+	} else {
+		copyAmoA = 100.0
+	}
+
+	// 3. Derive S_qPCR, S_Bio, S_Chem using lab formula
+	no2 := 0.0
+	if sample.Features.NO2MgL != nil {
+		no2 = *sample.Features.NO2MgL
+	}
+	h2s := 0.0
+	if sample.Features.H2SMgL != nil {
+		h2s = *sample.Features.H2SMgL
+	}
+	tom := 0.0
+	if sample.Features.TOMMgL != nil {
+		tom = *sample.Features.TOMMgL
+	}
+
+	sQPCR, sBio, sChem := sdri.CalculateSubScores(totalPathogenCopy, copyAmoA, freeNH3, no2, h2s, tom)
 
 	input := domain.SDRIInput{
 		CTPPC: sample.Features.CTPPC,
@@ -74,40 +121,4 @@ func (s *AppService) RecordCycleOutcome(ctx context.Context, outcome domain.Cycl
 		outcome.ID = fmt.Sprintf("out-%d", time.Now().UnixNano())
 	}
 	return s.repo.SaveCycleOutcome(ctx, outcome)
-}
-
-func deriveQPCRScore(f domain.SampleFeatures) float64 {
-	// Lower Ct = higher pathogen concentration. Baseline clean is around -0.5 to -0.8.
-	score := -0.5
-	if f.CTAHPND != nil && *f.CTAHPND > 0 && *f.CTAHPND < 35.0 {
-		score += (35.0 - *f.CTAHPND) * 0.8
-	}
-	if f.CTWSSV != nil && *f.CTWSSV > 0 && *f.CTWSSV < 35.0 {
-		score += (35.0 - *f.CTWSSV) * 1.2
-	}
-	if f.CTEHP != nil && *f.CTEHP > 0 && *f.CTEHP < 35.0 {
-		score += (35.0 - *f.CTEHP) * 0.5
-	}
-	return math.Round(score*1000) / 1000
-}
-
-func deriveBioScore(f domain.SampleFeatures) float64 {
-	// amoA indicator: high Ct (>30) means nitrifiers depleted -> higher risk.
-	score := -0.6
-	if f.CTamoA != nil && *f.CTamoA > 28.0 {
-		score += (*f.CTamoA - 28.0) * 0.4
-	}
-	return math.Round(score*1000) / 1000
-}
-
-func deriveChemScore(f domain.SampleFeatures) float64 {
-	// TOM > 60 mg/L or DO < 4.0 mg/L increases risk.
-	score := -0.3
-	if f.TOMMgL != nil && *f.TOMMgL > 50.0 {
-		score += (*f.TOMMgL - 50.0) * 0.05
-	}
-	if f.DOMgL != nil && *f.DOMgL < 4.5 {
-		score += (4.5 - *f.DOMgL) * 0.8
-	}
-	return math.Round(score*1000) / 1000
 }
