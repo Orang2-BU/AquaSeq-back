@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"aquaseq-back/internal/cache"
 	"aquaseq-back/internal/handler"
 	"aquaseq-back/internal/repository"
 	"aquaseq-back/internal/service"
@@ -24,7 +25,8 @@ func main() {
 	// In-memory concurrent repository for fast standalone execution & demo mode
 	// ConnectPostgres can be injected when DATABASE_URL is configured
 	repo := repository.NewInMemRepository()
-	svc := service.NewAppService(repo)
+	appCache := cache.New()
+	svc := service.NewAppService(repo, appCache)
 	h := handler.NewHandler(svc)
 
 	srv := &http.Server{

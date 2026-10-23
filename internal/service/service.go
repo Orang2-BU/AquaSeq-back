@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"aquaseq-back/internal/cache"
 	"aquaseq-back/internal/domain"
 	"aquaseq-back/internal/report"
 	"aquaseq-back/internal/repository"
@@ -13,11 +14,15 @@ import (
 )
 
 type AppService struct {
-	repo repository.Repository
+	repo  repository.Repository
+	cache *cache.Cache
 }
 
-func NewAppService(repo repository.Repository) *AppService {
-	return &AppService{repo: repo}
+func NewAppService(repo repository.Repository, c *cache.Cache) *AppService {
+	if c == nil {
+		c = cache.New()
+	}
+	return &AppService{repo: repo, cache: c}
 }
 
 // CalculateSDRI runs pure deterministic computation.
@@ -98,16 +103,28 @@ func (s *AppService) IngestSample(ctx context.Context, sample domain.Sample) (do
 		return domain.SDRIResult{}, fmt.Errorf("failed to save sample: %w", err)
 	}
 
+	// Invalidate trajectory cache for this pond on new sample ingestion
+	s.cache.Delete("traj:" + sample.PondID)
+
 	return result, nil
 }
 
-// GetPondTrajectory returns the time-series trajectory and early warnings.
+// GetPondTrajectory returns the time-series trajectory and early warnings (cached via stdlib in-memory TTL).
 func (s *AppService) GetPondTrajectory(ctx context.Context, pondID string) (domain.TrajectoryReport, error) {
+	cacheKey := "traj:" + pondID
+	if val, ok := s.cache.Get(cacheKey); ok {
+		if report, valid := val.(domain.TrajectoryReport); valid {
+			return report, nil
+		}
+	}
+
 	history, err := s.repo.GetTrajectoryHistory(ctx, pondID)
 	if err != nil {
 		return domain.TrajectoryReport{}, err
 	}
-	return trajectory.EvaluateTrajectory(pondID, history), nil
+	report := trajectory.EvaluateTrajectory(pondID, history)
+	s.cache.Set(cacheKey, report, 30*time.Second)
+	return report, nil
 }
 
 // FormatWhatsAppReport creates a farmer-friendly message text.

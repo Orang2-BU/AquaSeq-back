@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"aquaseq-back/internal/cache"
 	"aquaseq-back/internal/domain"
 	"aquaseq-back/internal/repository"
 	"aquaseq-back/internal/service"
@@ -19,7 +20,8 @@ func floatPtr(v float64) *float64 {
 
 func setupTestServer() http.Handler {
 	repo := repository.NewInMemRepository()
-	svc := service.NewAppService(repo)
+	appCache := cache.New()
+	svc := service.NewAppService(repo, appCache)
 	h := NewHandler(svc)
 	return h.RegisterRoutes()
 }

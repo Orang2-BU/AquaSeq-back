@@ -80,10 +80,11 @@ The backend is built in Go to easily handle 1000 concurrent requests without bot
 
 ### Why It Scales Without Bottlenecks:
 1. **Zero-Mutex Calculation Core**: Calculation functions (`sdri.Calculate`, `sdri.CalculateSubScores`) are pure functions with 0 locks and 0 shared mutable state. 1000 concurrent goroutines calculate simultaneously without waiting on mutexes.
-2. **Goroutine Concurrency**: Go's runtime multiplexes thousands of goroutines across CPU threads efficiently.
-3. **Database Connection Pool Tuning**: Database connections are reused and capped at 80 connections, preventing connection exhaustion on PostgreSQL.
-4. **Composite Indexes**: Time-series queries filter by `(pond_id, sampling_date DESC)`, ensuring sub-millisecond query execution.
-5. **Dual-Mode Repository**: Uses a thread-safe in-memory store for instant standalone demo/tests, with seamless switching to PostgreSQL via configuration.
+2. **Built-in Go In-Memory TTL Cache (`internal/cache`)**: Historical trajectory curves and evaluation reports are cached with 30s TTL using Go stdlib `sync.RWMutex`. Eliminates repetitive DB queries; automatically invalidated upon new sample ingestion.
+3. **Goroutine Concurrency**: Go's runtime multiplexes thousands of goroutines across CPU threads efficiently.
+4. **Database Connection Pool Tuning**: Database connections are reused and capped at 80 connections, preventing connection exhaustion on PostgreSQL.
+5. **Composite Indexes**: Time-series queries filter by `(pond_id, sampling_date DESC)`, ensuring sub-millisecond query execution.
+6. **Dual-Mode Repository**: Uses a thread-safe in-memory store for instant standalone demo/tests, with seamless switching to PostgreSQL via configuration.
 
 ---
 
