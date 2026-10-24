@@ -1,0 +1,5 @@
+# Berkas Salah Isi - Data Demo / Kontrol Kualitas Abnormal
+# Format: SampleCode, ct_ahpnd, ct_wssv, ct_ehp, ct_amoa, ct_16s, ct_ppc, do_mg_l, tom_mg_l, ph
+DEMO-HUMIC-01,31.24,40.00,40.00,24.13,18.42,24.46,4.90,112.0,7.60
+DEMO-HUMIC-01,31.24,40.00,40.00,24.13,18.42,24.46,4.90,112.0,15.20
+MOCK-SAMPLE-99,40.00,40.00,40.00,40.00,18.40,16.50,-2.00,180.0,3.10

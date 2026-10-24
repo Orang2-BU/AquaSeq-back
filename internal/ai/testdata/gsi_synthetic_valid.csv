@@ -1,0 +1,6 @@
+# Dataset Sintetik Valid - Standar Panel GSI Lab AquaSeq
+# Format: SampleCode, ct_ahpnd, ct_wssv, ct_ehp, ct_amoa, ct_16s, ct_ppc, do_mg_l, tom_mg_l, ph, salinity_ppt, temp_c, tan_mg_l, no2_mg_l, h2s_mg_l, alkalinity
+SampleCode,ct_ahpnd,ct_wssv,ct_ehp,ct_amoa,ct_16s,ct_ppc,do_mg_l,tom_mg_l,ph,salinity_ppt,temp_c,tan_mg_l,no2_mg_l,h2s_mg_l,alkalinity
+SMPL-GSI-01,34.20,40.00,40.00,19.55,18.38,19.95,5.80,78.0,7.90,21.0,30.0,0.60,0.35,0.002,165.0
+SMPL-GSI-02,18.84,40.00,25.16,28.22,18.44,19.95,2.65,128.4,8.40,22.5,30.0,3.20,4.85,0.092,82.0
+SMPL-GSI-03,27.89,40.00,28.56,22.87,18.45,19.95,5.50,52.0,7.85,20.5,30.0,0.45,0.42,0.004,148.0

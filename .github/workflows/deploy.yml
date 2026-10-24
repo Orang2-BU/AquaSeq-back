@@ -1,48 +1,95 @@
-name: CI/CD & Deploy Backend to Dokploy
+name: Verify and optionally trigger Dokploy
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [deployment]
   pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: aquaseq-back-ci-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  test:
-    name: Run Go Tests
+  verify:
+    name: Go tests, race, vet, build, image
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: aquaseq_ci
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: aquaseq_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aquaseq_ci -d aquaseq_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL_TEST: postgres://aquaseq_ci:disposable-ci-only@127.0.0.1:5432/aquaseq_ci?sslmode=disable
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
         with:
-          go-version: "1.24"
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
           cache: true
-
-      - name: Run Unit Tests
-        run: go test -v -race ./...
+      - run: go mod download
+      # Packages auto-migrate the same disposable database; serialize packages.
+      - run: go test -count=1 -p 1 ./...
+      - run: go test -count=1 -race -p 1 ./...
+        env:
+          CGO_ENABLED: "1"
+      - run: go vet ./...
+      - run: go build ./...
+      - run: docker build --tag aquaseq-back:ci .
 
   deploy:
-    name: Deploy to Dokploy
-    needs: test
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Trigger Dokploy (opt-in)
+    needs: verify
+    if: >-
+      vars.DOKPLOY_DEPLOY_ENABLED == 'true' &&
+      github.ref == 'refs/heads/deployment' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: dokploy-aquaseq-back
+      cancel-in-progress: false
     steps:
-      - name: Trigger Dokploy Deployment Webhook
+      # API works with Auto Deploy OFF; provider webhooks require it ON.
+      # Existing DOKPLOY_WEBHOOK_URL is retained, but not used by this workflow.
+      - name: Request deployment (not rollout verification)
         env:
-          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        shell: bash
         run: |
-          if [ -z "$DOKPLOY_WEBHOOK_URL" ]; then
-            echo "DOKPLOY_WEBHOOK_URL secret belum diset di GitHub Secrets repository backend."
-            echo "Setup: Dokploy -> Backend Application -> Deployments -> Webhook URL -> paste ke GitHub Secrets sebagai DOKPLOY_WEBHOOK_URL."
-            exit 0
-          fi
-          echo "Triggering Dokploy deployment webhook..."
-          curl -f -s -S -X POST "$DOKPLOY_WEBHOOK_URL"
-          echo "Deployment berhasil ditrigger ke Dokploy."
+          set -euo pipefail
+          : "${DOKPLOY_URL:?DOKPLOY_URL secret is required when deployment is enabled}"
+          : "${DOKPLOY_API_KEY:?DOKPLOY_API_KEY secret is required when deployment is enabled}"
+          : "${DOKPLOY_APPLICATION_ID:?DOKPLOY_APPLICATION_ID secret is required when deployment is enabled}"
+          python3 - <<'PY' > "$RUNNER_TEMP/dokploy-payload.json"
+          import json, os
+          from urllib.parse import urlsplit
+          url = urlsplit(os.environ["DOKPLOY_URL"])
+          if url.scheme != "https" or not url.netloc or url.path not in ("", "/") or url.query or url.fragment or url.username or url.password:
+              raise SystemExit("DOKPLOY_URL must be an HTTPS origin without credentials, path, query, or fragment")
+          print(json.dumps({"applicationId": os.environ["DOKPLOY_APPLICATION_ID"]}))
+          PY
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 60 \
+            --request POST "${DOKPLOY_URL%/}/api/application.deploy" \
+            --header "accept: application/json" \
+            --header "Content-Type: application/json" \
+            --header "x-api-key: $DOKPLOY_API_KEY" \
+            --data-binary "@$RUNNER_TEMP/dokploy-payload.json" --output /dev/null
+          echo "Dokploy accepted the request; rollout and deployed health remain unverified."

@@ -13,11 +13,11 @@ const (
 type RiskClass int
 
 const (
-	ClassInvalid RiskClass = 9 // Gated / Inhibited (PPC > 22.0)
-	ClassAman    RiskClass = 0 // < 5% (Normal / Sehat / Bioflok)
-	ClassWaspada RiskClass = 1 // 5% - 25% (Waspada Ringan)
-	ClassSiaga   RiskClass = 2 // 25% - 60% (Waspada Dini / Sub-Klinis)
-	ClassBahaya  RiskClass = 4 // >= 60% (Kritis / Outbreak Aktif)
+	ClassInvalid RiskClass = 0
+	ClassAman    RiskClass = 1
+	ClassWaspada RiskClass = 2
+	ClassSiaga   RiskClass = 3
+	ClassBahaya  RiskClass = 4
 )
 
 type Farm struct {
@@ -74,17 +74,28 @@ type SDRIInput struct {
 	SChem float64 `json:"s_chem"`
 }
 
+type EvidenceItem struct {
+	Feature   string  `json:"feature"`
+	Value     float64 `json:"value"`
+	Threshold string  `json:"threshold"`
+	Status    string  `json:"status"`
+}
+
 type SDRIResult struct {
-	Status         RiskStatus `json:"status"`
-	ZScore         float64    `json:"z_score"`
-	ProbabilityPct float64    `json:"probability_pct"`
-	RiskClass      RiskClass  `json:"risk_class"`
-	RiskLevel      string     `json:"risk_level"`
-	SQPCR          float64    `json:"s_qpcr"`
-	SBio           float64    `json:"s_bio"`
-	SChem          float64    `json:"s_chem"`
-	ModelVersion   string     `json:"model_version"`
-	Recommendation string     `json:"recommendation"`
+	Status            RiskStatus     `json:"status"`
+	ZScore            float64        `json:"z_score"`
+	ProbabilityPct    float64        `json:"probability_pct"`
+	RiskClass         RiskClass      `json:"risk_class"`
+	RiskLevel         string         `json:"risk_level"`
+	SQPCR             float64        `json:"s_qpcr"`
+	SBio              float64        `json:"s_bio"`
+	SChem             float64        `json:"s_chem"`
+	ModelVersion      string         `json:"model_version"`
+	Recommendation    string         `json:"recommendation"`
+	PredictedDisease  string         `json:"predicted_disease,omitempty"`
+	DiseaseName       string         `json:"disease_name,omitempty"`
+	Evidence          []EvidenceItem `json:"evidence,omitempty"`
+	MitigationActions []string       `json:"mitigation_actions,omitempty"`
 }
 
 type TrajectoryPoint struct {

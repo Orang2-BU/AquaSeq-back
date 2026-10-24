@@ -30,7 +30,7 @@ type InMemRepository struct {
 	farms    map[string]domain.Farm
 	ponds    map[string]domain.Pond
 	samples  map[string]domain.Sample
-	results  map[string]domain.SDRIResult // sampleID -> result
+	results  map[string]domain.SDRIResult        // sampleID -> result
 	history  map[string][]domain.TrajectoryPoint // pondID -> points
 	outcomes map[string]domain.CycleOutcome
 }

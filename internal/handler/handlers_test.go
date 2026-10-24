@@ -75,8 +75,8 @@ func TestCalculateSDRIEndpoint(t *testing.T) {
 	if dataMap["status"] != "VALID" {
 		t.Errorf("expected status VALID, got %v", dataMap["status"])
 	}
-	if dataMap["risk_class"].(float64) != 0 {
-		t.Errorf("expected class 0, got %v", dataMap["risk_class"])
+	if dataMap["risk_class"].(float64) != 1 {
+		t.Errorf("expected class 1, got %v", dataMap["risk_class"])
 	}
 
 	// 2. PPC Inhibited Rejection

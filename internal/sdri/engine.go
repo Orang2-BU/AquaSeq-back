@@ -23,7 +23,7 @@ const (
 // ponytail: using logistic regression with frozen V1 weights; calibrate weights per cycle outcome in V2.
 func Calculate(input domain.SDRIInput) domain.SDRIResult {
 	// Gatekeeper: Positive Process Control (PPC) validation
-	if input.CTPPC <= 0 || input.CTPPC > MaxValidPPC || input.CTPPC < MinValidPPC {
+	if math.IsNaN(input.CTPPC) || math.IsInf(input.CTPPC, 0) || input.CTPPC <= 0 || input.CTPPC > MaxValidPPC || input.CTPPC < MinValidPPC {
 		return domain.SDRIResult{
 			Status:         domain.StatusRejectedInhibitor,
 			ZScore:         0,
@@ -34,7 +34,19 @@ func Calculate(input domain.SDRIInput) domain.SDRIResult {
 			SBio:           input.SBio,
 			SChem:          input.SChem,
 			ModelVersion:   ModelVersion,
-			Recommendation: "Uji PCR terhambat (PPC abnormal). Sampel wajib diulang/ekstraksi ulang sebelum dievaluasi.",
+			Recommendation: "Kontrol kualitas tidak memenuhi syarat. Ulangi pengujian sampel sebelum menilai risiko.",
+		}
+	}
+
+	for _, score := range []float64{input.SQPCR, input.SBio, input.SChem} {
+		if math.IsNaN(score) || math.IsInf(score, 0) {
+			return domain.SDRIResult{
+				Status:         domain.StatusRejectedInvalidQC,
+				RiskClass:      domain.ClassInvalid,
+				RiskLevel:      "DATA_TIDAK_VALID",
+				ModelVersion:   ModelVersion,
+				Recommendation: "Subskor tidak valid. Periksa data sebelum menilai risiko.",
+			}
 		}
 	}
 
@@ -93,12 +105,12 @@ func CalculateSubScores(pathogenCopyML, amoaCopyML, nh3MgL, no2MgL, h2sMgL, tomM
 func classifyRisk(probPct float64) (domain.RiskClass, string, string) {
 	switch {
 	case probPct < 5.0:
-		return domain.ClassAman, "AMAN", "Kondisi optimal. Lanjutkan sampling rutin."
+		return domain.ClassAman, "AMAN", "Risiko model rendah, bukan bukti bebas penyakit. Lanjutkan pemantauan air dan sampel berkala."
 	case probPct < 25.0:
 		return domain.ClassWaspada, "WASPADA_RINGAN", "Pola awal fluktuasi air. Pantau kestabilan DO dan aerasi."
 	case probPct < 60.0:
-		return domain.ClassSiaga, "WASPADA_TINGGI", "Deviasi patogen/bioindikator signifikan. Kurangi pakan 20% dan siphon dasar petak."
+		return domain.ClassSiaga, "WASPADA_TINGGI", "Perubahan jejak patogen atau kualitas air perlu perhatian. Periksa aerasi dan hubungi pendamping budidaya."
 	default:
-		return domain.ClassBahaya, "BAHAYA", "Beban patogen kritis / wabah imminent. Isolasi saluran buang, desinfeksi terkontrol, dan mitigasi darurat."
+		return domain.ClassBahaya, "BAHAYA", "Risiko model tinggi. Periksa kondisi udang, aerasi, dan kualitas air segera. Hubungi pendamping untuk konfirmasi dan penanganan."
 	}
 }
