@@ -52,6 +52,9 @@ Panduan konfigurasi dan deployment AquaSeq (Backend Go & Frontend Next.js) pada 
 | `JEV_API_KEY` | **Secret** | `(secret key)` | Opsional: API key TypeSafe AI |
 | `JEV_BASE_URL` | Config | `https://api.typesafe.ai` | Opsional: URL API Jev |
 | `JEV_MODEL` | Config | `jev-latest` | Opsional: Nama model AI |
+| `ANTHROPIC_API_KEY` | **Secret** | `(secret key)` | Opsional: penulis penjelasan ilmiah memakai Claude lewat SDK resmi. Bila diisi, dipakai lebih dulu daripada `LLM_PROVIDER=openai` |
+| `ANTHROPIC_MODEL` | Config | `claude-opus-5-5` | Opsional: model Claude penulis penjelasan (bawaan `claude-opus-5-5`) |
+| `ANTHROPIC_BASE_URL` | Config | `https://api.anthropic.com` | Opsional: hanya bila memakai gateway yang kompatibel dengan API Anthropic |
 | `SMTP_HOST` | Config | `smtp.example.com` | Opsional: Host SMTP notifikasi email |
 | `SMTP_PORT` | Config | `587` | Opsional: Port SMTP |
 | `SMTP_USER` | Config | `noreply@example.com` | Opsional: Username SMTP |
@@ -143,3 +146,9 @@ Dokploy juga menyediakan endpoint Webhook per aplikasi. Jika menggunakan metode 
 | **Local Container Health Probe** | ✅ **Tested & Verified** | 📖 **Documented** | Backend container berjalan di `127.0.0.1:18081`, merespons `200 OK` pada `GET /api/v1/health` |
 | **GitHub Actions Pipeline** | ✅ **Configured** | ✅ **Configured** | Branch guards (`deployment` & `push-deployment`), safe JSON payload, fail-fast pada enabled |
 | **Dokploy VPS Rollout** | ⛔ **Unverified (No VPS)** | ⛔ **Unverified (No VPS)** | Belum ada VPS Dokploy yang terhubung (default `DOKPLOY_DEPLOY_ENABLED=false`) |
+
+### Penjelasan ilmiah (Opus + Jev)
+- Penulis: `ANTHROPIC_API_KEY` (Claude Opus via SDK resmi) atau, bila kosong, `LLM_PROVIDER=openai` + `AI_API_KEY`/`AI_BASE_URL`/`AI_MODEL` (gateway kompatibel OpenAI). Pemilih tindakan: `JEV_API_KEY` (tidak bergantung `LLM_PROVIDER`).
+- Tanpa kunci apa pun, endpoint tetap jalan dengan penjelasan template. Tidak perlu migrasi manual: tabel `sample_explanations` dan `sample_microbiome` dibuat otomatis dari `sql/schema.sql` saat server menyala.
+- Batas waktu penulis 22 detik (di bawah `WriteTimeout` 30 detik). Bila habis atau jawaban gagal diperiksa, hasilnya template dan alasannya tercatat di `fallback_reason`.
+- Model Claude menolak parameter `temperature` sejak 21 Okt 2026; klien kompatibel OpenAI tidak lagi mengirimnya untuk model yang namanya mengandung `claude`.

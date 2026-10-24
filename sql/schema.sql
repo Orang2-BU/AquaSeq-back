@@ -429,3 +429,12 @@ CREATE TABLE IF NOT EXISTS sample_microbiome (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_sample_microbiome_sample ON sample_microbiome(sample_id);
+
+-- 25. Penjelasan ilmiah per sampel (internal/science): ditulis LLM lalu diperiksa kode, atau template
+CREATE TABLE IF NOT EXISTS sample_explanations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sample_id UUID NOT NULL UNIQUE REFERENCES samples(id) ON DELETE CASCADE,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_sample_explanations_sample ON sample_explanations(sample_id);

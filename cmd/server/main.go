@@ -16,6 +16,7 @@ import (
 	"aquaseq-back/internal/handler"
 	"aquaseq-back/internal/learning"
 	"aquaseq-back/internal/repository"
+	"aquaseq-back/internal/science"
 )
 
 func main() {
@@ -80,6 +81,7 @@ func main() {
 		SMTPUser:    os.Getenv("SMTP_USER"),
 		SMTPPass:    os.Getenv("SMTP_PASS"),
 		SMTPFrom:    os.Getenv("SMTP_FROM"),
+		Explainer:   science.NewFromEnv(),
 		RegisterExtra: func(mux *http.ServeMux, withAuth func(http.HandlerFunc) http.HandlerFunc) {
 			authFunc := liveHandler.Authenticate
 

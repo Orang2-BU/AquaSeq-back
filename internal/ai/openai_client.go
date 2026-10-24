@@ -52,7 +52,7 @@ type openAIChatMessage struct {
 type openAIChatReq struct {
 	Model       string              `json:"model"`
 	Messages    []openAIChatMessage `json:"messages"`
-	Temperature float64             `json:"temperature"`
+	Temperature *float64            `json:"temperature,omitempty"`
 	Stream      bool                `json:"stream"`
 }
 
@@ -79,8 +79,13 @@ func (c *OpenAIClient) complete(ctx context.Context, systemPrompt, userPrompt st
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userPrompt},
 		},
-		Temperature: 0.1,
-		Stream:      false,
+		Stream: false,
+	}
+	// Model Claude (mis. lewat endpoint kompatibel OpenAI milik Anthropic) menolak `temperature` sejak
+	// 21 Okt 2026 dengan status 400; parameter hanya dikirim ke model lain.
+	if !strings.Contains(strings.ToLower(c.model), "claude") {
+		t := 0.1
+		reqPayload.Temperature = &t
 	}
 
 	bodyBytes, err := json.Marshal(reqPayload)
@@ -126,6 +131,14 @@ func (c *OpenAIClient) complete(ctx context.Context, systemPrompt, userPrompt st
 
 	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
 }
+
+// Complete mengirim satu percakapan system + user dan mengembalikan teks jawaban (dipakai penulis penjelasan).
+func (c *OpenAIClient) Complete(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
+	return c.complete(ctx, systemPrompt, userPrompt)
+}
+
+// Model mengembalikan nama model yang dipakai klien.
+func (c *OpenAIClient) Model() string { return c.model }
 
 // cleanJSON trims markdown fences like ```json ... ``` from the response.
 func cleanJSON(s string) string {

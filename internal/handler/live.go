@@ -12,6 +12,7 @@ import (
 
 	"aquaseq-back/internal/auth"
 	"aquaseq-back/internal/repository"
+	"aquaseq-back/internal/science"
 )
 
 type Config struct {
@@ -25,6 +26,8 @@ type Config struct {
 	SMTPPass      string
 	RegisterExtra func(*http.ServeMux, func(http.HandlerFunc) http.HandlerFunc)
 	SMTPFrom      string
+	// Explainer menulis penjelasan ilmiah per sampel; nil = template saja (tanpa LLM).
+	Explainer *science.Generator
 }
 
 type LiveHandler struct {
@@ -45,6 +48,9 @@ func NewLiveHandler(store repository.WebStore, cfg Config) *LiveHandler {
 		cfg.FilesDir = "./uploads"
 	}
 	_ = os.MkdirAll(cfg.FilesDir, 0755)
+	if cfg.Explainer == nil {
+		cfg.Explainer = science.New(nil, nil)
+	}
 	return &LiveHandler{
 		store:   store,
 		cfg:     cfg,
@@ -100,6 +106,8 @@ func (h *LiveHandler) Routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/ponds/{id}/trajectory", h.withAuth(h.handleGetTrajectoryLive))
 	mux.HandleFunc("POST /api/v1/samples/{id}/microbiome", h.withAuth(h.handleCreateMicrobiome))
 	mux.HandleFunc("GET /api/v1/ponds/{id}/microbiome", h.withAuth(h.handleGetPondMicrobiome))
+	mux.HandleFunc("GET /api/v1/samples/{id}/explanation", h.withAuth(h.handleGetExplanation))
+	mux.HandleFunc("POST /api/v1/samples/{id}/explanation", h.withAuth(h.handleCreateExplanation))
 
 	mux.HandleFunc("POST /api/v1/ponds/{id}/water-logs", h.withAuth(h.handleCreateWaterLog))
 	mux.HandleFunc("GET /api/v1/ponds/{id}/water-logs", h.withAuth(h.handleGetPondWaterLogs))

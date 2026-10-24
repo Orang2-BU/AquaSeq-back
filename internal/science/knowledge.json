@@ -1,0 +1,90 @@
+[
+  {
+    "id": "AQS-AMBANG",
+    "title": "Ambang fitur X1-X12 mesin AquaSeq V1",
+    "source": "AquaSeq internal/sdri/features.go (V1-GSI, dibekukan)",
+    "doi": "",
+    "text": "Kontrol kualitas PPC sah bila Ct 18 sampai 22. Fold regulation amoA aman bila >= 1 dan kritis bila < -2. Jejak AHPND peringatan bila >= 10 kopi/mL dan kritis bila > 1000. Jejak WSSV peringatan bila > 0 dan kritis bila > 100 kopi/mL. Jejak EHP peringatan bila >= 1 dan kritis bila > 100 kopi/mL. Indeks disbiosis aman bila < -2 dan kritis bila > 0. Amonia bebas aman bila <= 0,05 dan kritis bila > 0,1 mg/L. Nitrit aman bila <= 0,5 dan kritis bila > 1 mg/L. H2S aman bila <= 0,005 dan kritis bila > 0,01 mg/L. DO aman bila >= 5 dan kritis bila < 4 mg/L. TOM aman bila <= 70 dan kritis bila > 90 mg/L. Alkalinitas aman 120 sampai 180 dan kritis bila < 100 mg/L.",
+    "limits": "Ambang awal model V1, belum dikalibrasi dengan data hasil siklus."
+  },
+  {
+    "id": "AQS-MODEL",
+    "title": "Batas model peluang wabah V1-GSI",
+    "source": "AquaSeq README backend",
+    "doi": "",
+    "text": "Peluang wabah dihitung dengan regresi logistik dari tiga subskor: beban patogen qPCR, rasio patogen terhadap bakteri nitrifikasi, dan kimia air. Koefisien adalah nilai awal dari lab GSI dan akan dikalibrasi ulang dari data hasil siklus. Sampel dengan kontrol PPC di luar 18 sampai 22 ditolak supaya hasil negatif palsu karena inhibitor tidak dipercaya.",
+    "limits": "Belum divalidasi pada data kolam dengan hasil akhir yang diketahui. Bukan diagnosis resmi."
+  },
+  {
+    "id": "AQS-MIKROBA",
+    "title": "Ambang heuristik komunitas mikroba MB-V0",
+    "source": "AquaSeq internal/microbiome",
+    "doi": "",
+    "text": "Porsi Vibrio aman bila <= 10% dan kritis bila > 30% dari bacaan 16S. Penurunan keragaman Shannon dari baseline siklus aman bila <= 20% dan kritis bila > 40%. Pergeseran komunitas Bray-Curtis aman bila <= 0,4 dan kritis bila > 0,6. Sampel dengan kurang dari 5000 bacaan belum layak dibandingkan.",
+    "limits": "Ambang heuristik awal untuk pendukung keputusan, belum divalidasi terhadap data wabah."
+  },
+  {
+    "id": "WANG2022",
+    "title": "Gen racun pirAB pada plasmid pVA1 bisa berpindah antar bakteri",
+    "source": "Wang dkk., Microbiology Spectrum, 2022",
+    "doi": "10.1128/spectrum.01702-22",
+    "text": "Racun penyebab AHPND dikode gen pirA dan pirB pada plasmid tipe pVA1. Plasmid ini dapat berpindah antar bakteri lewat konjugasi dengan sistem sekresi tipe IV yang dikodenya sendiri; kepadatan bakteri, suhu, dan nutrien memengaruhi efisiensinya. Karena itu memantau gen pirAB lebih tepat daripada hanya menghitung nama bakteri.",
+    "limits": "Kehadiran gen belum berarti racun sedang diproduksi."
+  },
+  {
+    "id": "XIONG2024",
+    "title": "Mikrobiota dan penyakit udang yang melibatkan banyak patogen",
+    "source": "Xiong, Sha, Chen, Zoological Research, 2024",
+    "doi": "10.24272/j.issn.2095-8137.2024.158",
+    "text": "Banyak penyakit udang melibatkan lebih dari satu patogen dan mikrobiota udang sakit berbeda nyata dari yang sehat. Penulis menyarankan diagnosis kuantitatif dari taksa pembeda dan pemantauan gen fungsional dengan qPCR. Pemantauan yang umum dipakai sekarang sebagian besar kualitatif dan tertinggal dari tahap awal penyakit.",
+    "limits": "Tinjauan pustaka; terutama berdasar sampel usus udang."
+  },
+  {
+    "id": "LU2023",
+    "title": "Mikrobiota usus berubah seiring perkembangan AHPND",
+    "source": "Lu dkk., Applied Microbiology and Biotechnology, 2023",
+    "doi": "10.1007/s00253-023-12810-y",
+    "text": "Model berbasis mikrobiota usus membedakan tahap awal, lanjut, dan sekarat AHPND, dan komunitas bakteri usus makin mirip komunitas air seiring penyakit berkembang. Ini dasar gagasan bahwa air kolam bisa menjadi cermin kondisi udang.",
+    "limits": "Diukur pada sampel usus, bukan air; validasi pada eDNA air masih menjadi tujuan pengembangan."
+  },
+  {
+    "id": "WAIHO2023",
+    "title": "16S panjang penuh membedakan spesies Vibrio",
+    "source": "Waiho dkk., PeerJ, 2023",
+    "doi": "",
+    "text": "Dengan daerah V4 saja, Vibrio hanya terbaca sampai tingkat marga. 16S panjang penuh dapat membedakan V. harveyi, V. parahaemolyticus, dan V. vulnificus. Air bioflok memiliki Vibrio paling sedikit di antara sistem yang diteliti.",
+    "limits": "Sistem budidaya Malaysia (clearwater, probiotik, bioflok) bisa berbeda dari tambak lain."
+  },
+  {
+    "id": "RAJONHSON2024",
+    "title": "Asal sampel menentukan komunitas mikroba tambak",
+    "source": "Rajonhson dkk., Microbiology Spectrum, 2024",
+    "doi": "",
+    "text": "Pada tambak vaname, asal sampel (usus, air, sedimen) adalah penentu utama perbedaan komunitas bakteri. Bacaan 16S pendek dan panjang konsisten di tingkat taksa tinggi; bacaan pendek cukup untuk profil rutin.",
+    "limits": "Tambak Thailand; resolusi spesies lebih baik dengan bacaan panjang."
+  },
+  {
+    "id": "KERAGAMAN",
+    "title": "Cara membaca keragaman mikroba",
+    "source": "Metode standar ekologi mikroba (Buku Belajar AquaSeq Bab 10)",
+    "doi": "",
+    "text": "Shannon mengukur seberapa beragam dan merata komunitas; Chao1 memperkirakan jumlah jenis termasuk yang jarang; Bray-Curtis mengukur perbedaan dua komunitas dari 0 (sama) sampai 1 (berbeda total). Keragaman turun tidak otomatis berarti sakit karena juga berubah menurut umur kultur, salinitas, dan probiotik, jadi bandingkan dengan baseline kolam itu sendiri. Chao1 peka terhadap kesalahan baca dan kedalaman bacaan.",
+    "limits": "Penurunan keragaman adalah sinyal yang perlu dikonfirmasi, bukan diagnosis."
+  },
+  {
+    "id": "KOMPOSISI",
+    "title": "Data 16S bersifat relatif",
+    "source": "Metode standar analisis kompositional (Buku Belajar AquaSeq Bab 11)",
+    "doi": "",
+    "text": "Data sekuensing 16S memberi porsi dari total, bukan jumlah mutlak: bila satu bakteri melonjak, porsi bakteri lain tampak turun walau jumlahnya tidak berubah. Porsi Vibrio dari sekuensing tidak boleh dibaca sebagai hasil qPCR; jumlah mutlak didekati dengan total 16S dari qPCR.",
+    "limits": "Porsi Vibrio tinggi belum tentu berarti Vibrio patogen; hanya sebagian kecil membawa pirAB."
+  },
+  {
+    "id": "EMERSON1975",
+    "title": "Amonia bebas dari TAN, suhu, dan pH",
+    "source": "Emerson dkk., 1975 (dipakai di backend AquaSeq)",
+    "doi": "",
+    "text": "Fraksi amonia bebas (NH3) yang beracun bagi udang dihitung dari TAN, suhu, dan pH; makin tinggi pH dan suhu, makin besar fraksi NH3.",
+    "limits": "Persamaan kesetimbangan; tidak memperhitungkan salinitas secara rinci."
+  }
+]

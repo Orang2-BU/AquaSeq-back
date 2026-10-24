@@ -238,3 +238,16 @@ Current cycle only. Response `data`: `{ "pond", "version", "series": [{ sample_i
 ### Sample detail additions: `GET /api/v1/samples/{id}`
 - `engineered_features`: all X1-X12 from `sdri.Assess` `[{ code, name, value, status, threshold }]`.
 - `microbiome`: `Metrics` or null.
+
+---
+
+## 8. Scientific Explanation (writer LLM + Jev picker, checked by code)
+Writes a short Bahasa Indonesia explanation for one sample from machine facts (SDRI result, X1-X12, microbiome metrics, markers) and the curated knowledge pack `internal/science/knowledge.json`. The LLM never computes scores: every number must exist in the facts or the pack, every reason must cite a known source id (`FAKTA` or a pack id), and absolute words ("pasti", "dijamin", "bebas penyakit") are rejected. On any failure the deterministic template is returned.
+
+### `GET /api/v1/samples/{id}/explanation` (owner or assigned technician)
+Response `data`: `{ "sample_id", "explanation": Explanation | null, "ai": { "writer": "claude" | "openai" | "template", "writer_model"?, "picker": "jev" | "" } }`.
+
+### `POST /api/v1/samples/{id}/explanation` (owner only)
+Generates (or regenerates) and stores the explanation. Same response shape.
+
+`Explanation`: `{ summary, reasons: [{ text, sources[] }], actions: [{ text, source }], limitations[], writer, writer_model?, fallback_reason?, priority_action: { action, confidence, needs_review, picker } | null, sources: [{ id, title, source, doi, text, limits }], generated_at }`. `priority_action` is chosen by Jev from the machine's `mitigation_actions` only; `needs_review` is true below confidence 0.6.

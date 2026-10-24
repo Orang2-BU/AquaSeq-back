@@ -174,6 +174,7 @@ var equalityKeys = map[string][]string{
 	"sample_features":   {"id", "sample_id"},
 	"sdri_results":      {"id", "sample_id"},
 	"sample_microbiome": {"id", "sample_id"},
+	"sample_explanations": {"id", "sample_id"},
 	"water_logs":        {"id", "pond_id"},
 	"alerts":            {"id", "farm_id"},
 	"tasks":             {"id", "farm_id", "pond_id", "assignee_id"},
