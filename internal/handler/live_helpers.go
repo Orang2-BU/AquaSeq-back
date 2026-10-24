@@ -75,7 +75,18 @@ func clone(r rec) rec {
 	}
 	return out
 }
-func object(v any) rec { b, _ := json.Marshal(v); r := rec{}; _ = json.Unmarshal(b, &r); return r }
+func object(v any) rec {
+	if v == nil {
+		return make(rec)
+	}
+	b, _ := json.Marshal(v)
+	r := rec{}
+	_ = json.Unmarshal(b, &r)
+	if r == nil {
+		return make(rec)
+	}
+	return r
+}
 func stringsOf(v any) []string {
 	b, _ := json.Marshal(v)
 	out := []string{}

@@ -58,19 +58,49 @@ func NewJevClient(baseURL, apiKey, model string, httpClient *http.Client) *JevCl
 
 func NewClientFromEnv() Decider {
 	provider := strings.ToLower(strings.TrimSpace(os.Getenv("LLM_PROVIDER")))
-	if provider != "jev" {
+	switch provider {
+	case "openai", "gemini":
+		apiKey := strings.TrimSpace(os.Getenv("OPENAI_API_KEY"))
+		if apiKey == "" {
+			apiKey = strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
+		}
+		if apiKey == "" {
+			apiKey = strings.TrimSpace(os.Getenv("AI_API_KEY"))
+		}
+		if apiKey == "" {
+			return nil
+		}
+		baseURL := os.Getenv("OPENAI_BASE_URL")
+		if baseURL == "" {
+			baseURL = os.Getenv("GEMINI_BASE_URL")
+		}
+		if baseURL == "" {
+			baseURL = os.Getenv("AI_BASE_URL")
+		}
+		model := os.Getenv("OPENAI_MODEL")
+		if model == "" {
+			model = os.Getenv("GEMINI_MODEL")
+		}
+		if model == "" {
+			model = os.Getenv("AI_MODEL")
+		}
+		return NewOpenAIClient(baseURL, apiKey, model, nil)
+
+	case "jev":
+		apiKey := strings.TrimSpace(os.Getenv("JEV_API_KEY"))
+		if apiKey == "" {
+			apiKey = strings.TrimSpace(os.Getenv("TYPESAFE_API_KEY"))
+		}
+		if apiKey == "" {
+			return nil
+		}
+		baseURL := os.Getenv("JEV_BASE_URL")
+		model := os.Getenv("JEV_MODEL")
+		return NewJevClient(baseURL, apiKey, model, nil)
+
+	default:
 		return nil
 	}
-	apiKey := strings.TrimSpace(os.Getenv("JEV_API_KEY"))
-	if apiKey == "" {
-		apiKey = strings.TrimSpace(os.Getenv("TYPESAFE_API_KEY"))
-	}
-	if apiKey == "" {
-		return nil
-	}
-	baseURL := os.Getenv("JEV_BASE_URL")
-	model := os.Getenv("JEV_MODEL")
-	return NewJevClient(baseURL, apiKey, model, nil)
 }
 
 type systemOneQuestion struct {

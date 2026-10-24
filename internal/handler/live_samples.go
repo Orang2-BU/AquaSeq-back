@@ -437,6 +437,9 @@ func (h *LiveHandler) handleGetBatchDetail(w http.ResponseWriter, r *http.Reques
 		}
 
 		metaMap := object(b["meta"])
+		if metaMap == nil {
+			metaMap = make(rec)
+		}
 		if metaMap["wells"] == nil {
 			metaMap["wells"] = []any{}
 		}
