@@ -448,14 +448,19 @@ var featureLabel = map[string]string{
 }
 
 func fmtNum(v float64) string {
-	s := strconv.FormatFloat(v, 'f', -1, 64)
+	s := strconv.FormatFloat(v, 'g', 3, 64) // tiga angka penting: 7,47 / 0,118 / 0,00213
 	if math.Abs(v) >= 100 {
 		s = strconv.FormatFloat(math.Round(v), 'f', 0, 64)
-	} else if strings.Contains(s, ".") && len(s)-strings.Index(s, ".") > 4 {
-		s = strconv.FormatFloat(v, 'f', 3, 64)
 	}
 	return strings.ReplaceAll(s, ".", ",")
 }
+
+// fmtPct menulis peluang dengan satu desimal, sama dengan tampilan web.
+func fmtPct(v float64) string {
+	return strings.ReplaceAll(strconv.FormatFloat(v, 'f', 1, 64), ".", ",")
+}
+
+var thresholdText = strings.NewReplacer(">=", "≥", "<=", "≤", ";", ",")
 
 // Template menyusun penjelasan dari fakta tanpa LLM; selalu lolos pemeriksa.
 func Template(f Facts) Explanation {
@@ -468,7 +473,7 @@ func Template(f Facts) Explanation {
 		return e
 	}
 	e.Summary = fmt.Sprintf("Kolam %s pada umur kultur %d hari masuk kelas risiko %d (%s) dengan peluang wabah %s%% menurut model %s. %s.",
-		f.PondCode, f.CycleDay, f.RiskClass, f.RiskLevel, fmtNum(f.ProbabilityPct), f.ModelVersion, strings.TrimSuffix(f.DiseaseName, "."))
+		f.PondCode, f.CycleDay, f.RiskClass, f.RiskLevel, fmtPct(f.ProbabilityPct), f.ModelVersion, strings.TrimSuffix(f.DiseaseName, "."))
 	for _, x := range f.Features {
 		if (x.Status == "kritis" || x.Status == "peringatan") && x.Value != nil && len(e.Reasons) < 4 {
 			src := featureSource[x.Name]
@@ -476,7 +481,7 @@ func Template(f Facts) Explanation {
 				src = "AQS-AMBANG"
 			}
 			e.Reasons = append(e.Reasons, Reason{
-				Text:    fmt.Sprintf("%s %s, status %s (ambang: %s).", featureLabel[x.Name], fmtNum(*x.Value), x.Status, strings.ReplaceAll(x.Threshold, ";", ",")),
+				Text:    fmt.Sprintf("%s %s, status %s (ambang: %s).", featureLabel[x.Name], fmtNum(*x.Value), x.Status, thresholdText.Replace(x.Threshold)),
 				Sources: []string{FactSource, src},
 			})
 		}
