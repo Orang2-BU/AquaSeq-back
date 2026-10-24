@@ -98,6 +98,8 @@ func (h *LiveHandler) Routes() http.Handler {
 	mux.HandleFunc("GET /api/v1/ponds/{id}/samples", h.withAuth(h.handleGetPondSamples))
 	mux.HandleFunc("GET /api/v1/samples/{id}", h.withAuth(h.handleGetSampleDetail))
 	mux.HandleFunc("GET /api/v1/ponds/{id}/trajectory", h.withAuth(h.handleGetTrajectoryLive))
+	mux.HandleFunc("POST /api/v1/samples/{id}/microbiome", h.withAuth(h.handleCreateMicrobiome))
+	mux.HandleFunc("GET /api/v1/ponds/{id}/microbiome", h.withAuth(h.handleGetPondMicrobiome))
 
 	mux.HandleFunc("POST /api/v1/ponds/{id}/water-logs", h.withAuth(h.handleCreateWaterLog))
 	mux.HandleFunc("GET /api/v1/ponds/{id}/water-logs", h.withAuth(h.handleGetPondWaterLogs))

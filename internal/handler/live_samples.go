@@ -537,8 +537,23 @@ func (h *LiveHandler) handleGetSampleDetail(w http.ResponseWriter, r *http.Reque
 			"sdri_result":   resRec,
 			"copies_per_ml": assess.CopiesPerML,
 			"nh3_mg_l":      assess.NH3MgL,
+			// K9: semua fitur X1-X12 (termasuk yang aman), bukan hanya evidence.
+			"engineered_features": assess.Features,
+			"microbiome":          microbiomeOf(t, sid),
 		}, nil
 	})
+}
+
+// microbiomeOf mengembalikan metrik komunitas sampel, atau nil bila tabel kelimpahan belum diunggah.
+func microbiomeOf(t tx, sid string) any {
+	mb, e := first(t, microbiomeTable, "sample_id", sid)
+	if e != nil {
+		return nil
+	}
+	if m := metricsOf(mb["metrics"]); m != nil {
+		return m
+	}
+	return nil
 }
 
 func (h *LiveHandler) handleGetTrajectoryLive(w http.ResponseWriter, r *http.Request) {

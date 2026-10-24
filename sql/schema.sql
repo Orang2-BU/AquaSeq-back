@@ -419,3 +419,13 @@ CREATE TABLE IF NOT EXISTS mobile_schedules (
 );
 CREATE INDEX IF NOT EXISTS idx_mobile_schedules_key ON mobile_schedules(schedule_key);
 
+-- 24. Kelimpahan taksa per sampel (klasifikasi 16S dari lab mitra) dan metrik komunitas (internal/microbiome)
+CREATE TABLE IF NOT EXISTS sample_microbiome (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sample_id UUID NOT NULL UNIQUE REFERENCES samples(id) ON DELETE CASCADE,
+    source VARCHAR(255) NOT NULL,
+    taxa JSONB NOT NULL,
+    metrics JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_sample_microbiome_sample ON sample_microbiome(sample_id);

@@ -204,3 +204,37 @@ Error Response:
 - **URL**: `/api/v1/health`
 - **Method**: `GET`
 - **Description**: Liveness and readiness probe.
+
+---
+
+## 7. Microbiome Abundance (16S taxa table from partner lab)
+Turns a taxa abundance table (output of the lab's 16S classifier) into community metrics, a shift versus the pond baseline, and a 3-5 marker qPCR panel. Nanopore processing itself stays at the lab. Thresholds are heuristic (`MB-V0-heuristik`), not validated against outbreak data.
+
+### Upload: `POST /api/v1/samples/{id}/microbiome` (owner only)
+```json
+{ "csv": "taxon,genus,reads\nVibrio harveyi,Vibrio,2000\nBacillus subtilis,Bacillus,5000\n", "source": "Lab mitra (16S)" }
+```
+- Required columns: `taxon`, `reads` (integer >= 0). `genus` optional (defaults to the first word of `taxon`). Comma or semicolon separator; duplicate taxa are summed.
+- Baseline = earliest VALID abundance sample in the same pond cycle with an equal or lower `cycle_day`.
+- Response `data`: `{ "sample_id", "microbiome": Metrics }`. Invalid CSV returns `400 VALIDATION_ERROR` with `fields.csv`.
+
+`Metrics`:
+| Field | Meaning |
+|---|---|
+| `version` | `MB-V0-heuristik` |
+| `status` | `VALID`, or `BELUM_CUKUP` when `total_reads` < 5000 |
+| `total_reads`, `observed_taxa` | depth and richness |
+| `shannon`, `evenness` | Shannon H (ln) and Pielou evenness |
+| `chao1` | bias-corrected Chao1: S_obs + F1(F1-1)/(2(F2+1)) |
+| `vibrio_pct` | relative share of genus Vibrio (%) |
+| `bray_curtis`, `baseline_sample_id`, `shannon_drop_pct` | shift versus baseline on relative proportions; null without baseline |
+| `signals` | `[{ code, value, status, threshold }]`: `porsi_vibrio` (warn > 10%, critical > 30%), `penurunan_keragaman` (warn > 20%, critical > 40%), `pergeseran_komunitas` (warn > 0.4, critical > 0.6), or `kedalaman_baca` when shallow |
+| `top_taxa` | up to 8 `{ taxon, genus, pct }` |
+
+### Pond summary: `GET /api/v1/ponds/{id}/microbiome` (owner or assigned technician)
+Current cycle only. Response `data`: `{ "pond", "version", "series": [{ sample_id, sample_code, sampling_date, cycle_day, source, uploaded_at, status, shannon, chao1, vibrio_pct, bray_curtis }], "latest": Metrics | null, "markers": [{ target, reason }] }`.
+- `markers` always holds `16S` (normalisation) and `amoA` (nitrifiers) plus `pirA`; `vp28` and `swp1` are added when the latest valid qPCR shows WSSV or EHP traces (3-5 markers).
+
+### Sample detail additions: `GET /api/v1/samples/{id}`
+- `engineered_features`: all X1-X12 from `sdri.Assess` `[{ code, name, value, status, threshold }]`.
+- `microbiome`: `Metrics` or null.
