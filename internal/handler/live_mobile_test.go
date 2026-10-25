@@ -102,9 +102,16 @@ func mobileExercise(t *testing.T,f mobileFixture) {
  for i:=0;i<2;i++ {code,out:=doJSON(t,"PATCH",base+"/tasks/"+taskID,f.techToken,rec{"done":true});if code!=200 || str(object(out["data"]),"status")!="dilaporkan" {t.Fatal(code,out)}}
  code,_=doJSON(t,"PATCH",base+"/tasks/"+taskID,f.techToken,rec{"done":false});if code!=409 {t.Fatal("undo",code)}
  err=f.store.Read(context.Background(),func(tx tx)error{
-  for table,want:=range map[string]int{"mobile_readings":1,"mobile_schedules":1,"tasks":1,"task_reports":1,"water_logs":0,"cycle_outcomes":0} {
-   rows,e:=tx.List(table);if e!=nil{return e};if len(rows)!=want {t.Fatalf("%s: %d != %d",table,len(rows),want)}
-  };return nil
+  readings,e:=tx.FindEqual("mobile_readings","pond_id",f.pond);if e!=nil{return e};if len(readings)!=1{t.Fatalf("mobile_readings: %d != 1",len(readings))}
+  tasks,e:=tx.FindEqual("tasks","pond_id",f.pond);if e!=nil{return e};if len(tasks)!=1{t.Fatalf("tasks: %d != 1",len(tasks))}
+  reports,e:=tx.FindEqual("task_reports","task_id",taskID);if e!=nil{return e};if len(reports)!=1{t.Fatalf("task_reports: %d != 1",len(reports))}
+  allScheds,e:=tx.List("mobile_schedules");if e!=nil{return e}
+  schedCount:=0
+  for _,s:=range allScheds{if str(s,"task_id")==taskID{schedCount++}}
+  if schedCount!=1{t.Fatalf("mobile_schedules: %d != 1",schedCount)}
+  waterLogs,e:=tx.FindEqual("water_logs","pond_id",f.pond);if e!=nil{return e};if len(waterLogs)!=0{t.Fatalf("water_logs: %d != 0",len(waterLogs))}
+  cycles,e:=tx.FindEqual("cycle_outcomes","pond_id",f.pond);if e!=nil{return e};if len(cycles)!=0{t.Fatalf("cycle_outcomes: %d != 0",len(cycles))}
+  return nil
  });if err!=nil {t.Fatal(err)}
  code,_=doJSON(t,"POST",base+"/ai/mitigasi",f.outsiderToken,rec{"pond_id":f.pond});if code!=403 {t.Fatal("cross mitigation",code)}
  code,_=doJSON(t,"POST",base+"/ai/mitigasi",f.techToken,rec{"pond_id":f.unassigned});if code!=403 {t.Fatal("unassigned mitigation",code)}

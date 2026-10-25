@@ -40,16 +40,16 @@ func runRAGFlow(t *testing.T, store repository.WebStore) {
 		t.Fatal(err)
 	}
 
-	farmAID := "farm-rag-a-" + generateUUID()[:8]
-	farmBID := "farm-rag-b-" + generateUUID()[:8]
-	farmSID := "farm-rag-s-" + generateUUID()[:8]
+	farmAID := generateUUID()
+	farmBID := generateUUID()
+	farmSID := generateUUID()
 
-	userAID := "user-rag-a-" + generateUUID()[:8]
-	userBID := "user-rag-b-" + generateUUID()[:8]
+	userAID := generateUUID()
+	userBID := generateUUID()
 
-	pondA1ID := "pond-rag-a1-" + generateUUID()[:8]
-	pondB1ID := "pond-rag-b1-" + generateUUID()[:8]
-	pondS1ID := "pond-rag-s1-" + generateUUID()[:8]
+	pondA1ID := generateUUID()
+	pondB1ID := generateUUID()
+	pondS1ID := generateUUID()
 
 	// 1. Seed Farms, Users, Memberships, Ponds into store
 	err = store.Write(ctx, func(tx repository.WebTx) error {
@@ -58,14 +58,14 @@ func runRAGFlow(t *testing.T, store repository.WebStore) {
 		_ = tx.Put("users", repository.Record{"id": userBID, "full_name": "Owner B", "email": userBID + "@test.com", "password_hash": "hash"})
 
 		// Farms (A=nyata, B=nyata, S=simulasi)
-		_ = tx.Put("farms", repository.Record{"id": farmAID, "name": "Tambak Real A", "owner_id": userAID, "provenance": "nyata"})
-		_ = tx.Put("farms", repository.Record{"id": farmBID, "name": "Tambak Real B", "owner_id": userBID, "provenance": "nyata"})
-		_ = tx.Put("farms", repository.Record{"id": farmSID, "name": "Tambak Simulasi S", "owner_id": userAID, "provenance": "simulasi"})
+		_ = tx.Put("farms", repository.Record{"id": farmAID, "name": "Tambak Real A", "owner_id": userAID, "regency": "Banyuwangi", "provenance": "nyata"})
+		_ = tx.Put("farms", repository.Record{"id": farmBID, "name": "Tambak Real B", "owner_id": userBID, "regency": "Banyuwangi", "provenance": "nyata"})
+		_ = tx.Put("farms", repository.Record{"id": farmSID, "name": "Tambak Simulasi S", "owner_id": userAID, "regency": "Banyuwangi", "provenance": "simulasi"})
 
 		// Memberships
-		_ = tx.Put("memberships", repository.Record{"id": "m-" + userAID, "farm_id": farmAID, "user_id": userAID, "role": "pemilik", "active": true})
-		_ = tx.Put("memberships", repository.Record{"id": "m-" + userBID, "farm_id": farmBID, "user_id": userBID, "role": "pemilik", "active": true})
-		_ = tx.Put("memberships", repository.Record{"id": "m-s-" + userAID, "farm_id": farmSID, "user_id": userAID, "role": "pemilik", "active": true})
+		_ = tx.Put("memberships", repository.Record{"id": generateUUID(), "farm_id": farmAID, "user_id": userAID, "role": "pemilik", "active": true})
+		_ = tx.Put("memberships", repository.Record{"id": generateUUID(), "farm_id": farmBID, "user_id": userBID, "role": "pemilik", "active": true})
+		_ = tx.Put("memberships", repository.Record{"id": generateUUID(), "farm_id": farmSID, "user_id": userAID, "role": "pemilik", "active": true})
 
 		// Ponds: pond A1 starts at current_cycle: 2 (cycle 1 is past/completed)
 		_ = tx.Put("ponds", repository.Record{"id": pondA1ID, "farm_id": farmAID, "pond_code": "A1", "current_cycle": 2, "status": "ACTIVE"})
@@ -78,205 +78,116 @@ func runRAGFlow(t *testing.T, store repository.WebStore) {
 		t.Fatal(err)
 	}
 
-	// 2. Cycle 1 on Pond A1:
-	// a. Ingest sample in cycle 1
-	sampleA1Cycle1ID := "smp-a1-c1-" + generateUUID()[:8]
+	// Historical samples include valid, incomplete, QC-rejected, and synthetic cases.
+	sampleA1Cycle1ID := generateUUID()
 	err = store.Write(ctx, func(tx repository.WebTx) error {
 		_ = tx.Put("samples", repository.Record{
-			"id":            sampleA1Cycle1ID,
-			"pond_id":       pondA1ID,
-			"sample_code":   "SMP-A1-C1",
-			"sampling_date": "2026-09-01",
-			"cycle_day":     30,
-			"meta":          map[string]any{"cycle_number": 1},
-			"created_at":    now(),
+			"id": sampleA1Cycle1ID, "pond_id": pondA1ID, "sample_code": "SMP-A1-C1",
+			"sampling_date": "2026-09-01", "cycle_day": 30,
+			"meta": map[string]any{"cycle_number": 1}, "created_at": now(),
 		})
 		_ = tx.Put("sample_features", repository.Record{
-			"id":           "feat-" + sampleA1Cycle1ID,
-			"sample_id":    sampleA1Cycle1ID,
-			"ct_ahpnd":     22.0,
-			"ct_wssv":      40.0,
-			"ct_ehp":       30.0,
-			"ct_amoa":      28.22,
-			"ct_16s":       18.44,
-			"ct_ppc":       19.95,
-			"do_mg_l":      4.2,
-			"tom_mg_l":     82.0,
-			"ph":           7.8,
-			"salinity_ppt": 22.5,
-			"temp_c":       29.5,
-			"tan_mg_l":     0.5,
-			"no2_mg_l":     0.2,
-			"h2s_mg_l":     0.005,
-			"alkalinity":   120.0,
-			"created_at":   now(),
+			"id": generateUUID(), "sample_id": sampleA1Cycle1ID,
+			"ct_ahpnd": 22.0, "ct_wssv": 40.0, "ct_ehp": 30.0, "ct_amoa": 28.22,
+			"ct_16s": 18.44, "ct_ppc": 19.95, "do_mg_l": 4.2, "tom_mg_l": 82.0,
+			"ph": 7.8, "salinity_ppt": 22.5, "temp_c": 29.5, "tan_mg_l": 0.5,
+			"no2_mg_l": 0.2, "h2s_mg_l": 0.005, "alkalinity": 120.0, "created_at": now(),
 		})
 		_ = tx.Put("sdri_results", repository.Record{
-			"id":              "res-" + sampleA1Cycle1ID,
-			"sample_id":       sampleA1Cycle1ID,
-			"status":          "VALID",
-			"probability_pct": 38.0,
-			"risk_class":      2,
-			"risk_level":      "WASPADA_TINGGI",
-			"disease_name":    "AHPND",
-			"created_at":      now(),
+			"id": generateUUID(), "sample_id": sampleA1Cycle1ID, "status": "VALID",
+			"probability_pct": 38.0, "risk_class": 2, "risk_level": "WASPADA_TINGGI",
+			"disease_name": "AHPND", "created_at": now(),
 		})
-
-		// b. Task created with source_sample_id and performed report
-		taskA1ID := "task-a1-c1-" + generateUUID()[:8]
+		taskA1ID := generateUUID()
 		_ = tx.Put("tasks", repository.Record{
-			"id":               taskA1ID,
-			"farm_id":          farmAID,
-			"pond_id":          pondA1ID,
-			"source_sample_id": sampleA1Cycle1ID,
-			"title":            "Siphon dan pengenceran",
-			"instruction":      "Siphon lumpur dasar dan turunkan pakan 20%",
-			"status":           "selesai",
-			"assignee_id":      userAID,
-			"created_by":       userAID,
-			"due_at":           time.Now().Add(24 * time.Hour).Format(time.RFC3339),
-			"created_at":       now(),
+			"id": taskA1ID, "farm_id": farmAID, "pond_id": pondA1ID,
+			"source_sample_id": sampleA1Cycle1ID, "kind": "tindakan",
+			"title": "Siphon dan pengenceran", "instruction": "Siphon lumpur dasar dan turunkan pakan 20%",
+			"status": "selesai", "assignee_id": userAID, "created_by": userAID,
+			"due_at": time.Now().Add(24 * time.Hour).Format(time.RFC3339), "created_at": now(),
 		})
 		_ = tx.Put("task_reports", repository.Record{
-			"id":          "rep-" + taskA1ID,
-			"task_id":     taskA1ID,
-			"note":        "Telah dilakukan siphon dasar petak A1 dan pakan dikurangi 20%",
-			"reported_by": userAID,
-			"reported_at": now(),
+			"id": generateUUID(), "task_id": taskA1ID,
+			"note": "Telah dilakukan siphon dasar petak A1 dan pakan dikurangi 20%",
+			"reported_by": userAID, "reported_at": now(),
 		})
-
-		// c. Cycle 1 outcome recorded
 		_ = tx.Put("cycle_outcomes", repository.Record{
-			"id":           "co-a1-c1-" + generateUUID()[:8],
-			"pond_id":      pondA1ID,
-			"cycle_number": 1,
-			"outcome":      "HARVEST_SUCCESS",
-			"notes":        "Panen sukses parsial hari 75",
-			"created_at":   now(),
+			"id": generateUUID(), "pond_id": pondA1ID, "cycle_number": 1,
+			"outcome": "HARVEST_SUCCESS", "notes": "Panen sukses parsial hari 75", "created_at": now(),
 		})
 
-		// d. Also add an INCOMPLETE sample in cycle 1 (no task performed) -> should be skipped
-		sampleIncompleteID := "smp-a1-c1-incomplete-" + generateUUID()[:8]
+		sampleIncompleteID := generateUUID()
 		_ = tx.Put("samples", repository.Record{
-			"id":          sampleIncompleteID,
-			"pond_id":     pondA1ID,
-			"sample_code": "SMP-A1-INCOMP",
-			"meta":        map[string]any{"cycle_number": 1},
-			"created_at":  now(),
+			"id": sampleIncompleteID, "pond_id": pondA1ID, "sample_code": "SMP-A1-INCOMP",
+			"sampling_date": "2026-09-02", "cycle_day": 31,
+			"meta": map[string]any{"cycle_number": 1}, "created_at": now(),
 		})
 		_ = tx.Put("sample_features", repository.Record{
-			"id":        "feat-" + sampleIncompleteID,
-			"sample_id": sampleIncompleteID,
-			"do_mg_l":   5.0,
+			"id": generateUUID(), "sample_id": sampleIncompleteID, "ct_ppc": 19.95, "do_mg_l": 5.0,
 		})
 		_ = tx.Put("sdri_results", repository.Record{
-			"id":         "res-" + sampleIncompleteID,
-			"sample_id":  sampleIncompleteID,
-			"status":     "VALID",
-			"risk_class": 1,
+			"id": generateUUID(), "sample_id": sampleIncompleteID, "status": "VALID",
+			"risk_class": 1, "risk_level": "AMAN",
 		})
 
-		// e. Add a QC-rejected sample in cycle 1 -> should be skipped
-		sampleQCFailID := "smp-a1-c1-qc-" + generateUUID()[:8]
+		sampleQCFailID := generateUUID()
 		_ = tx.Put("samples", repository.Record{
-			"id":          sampleQCFailID,
-			"pond_id":     pondA1ID,
-			"sample_code": "SMP-A1-QCFAIL",
-			"meta":        map[string]any{"cycle_number": 1},
-			"created_at":  now(),
+			"id": sampleQCFailID, "pond_id": pondA1ID, "sample_code": "SMP-A1-QCFAIL",
+			"sampling_date": "2026-09-03", "cycle_day": 32,
+			"meta": map[string]any{"cycle_number": 1}, "created_at": now(),
 		})
 		_ = tx.Put("sdri_results", repository.Record{
-			"id":         "res-" + sampleQCFailID,
-			"sample_id":  sampleQCFailID,
-			"status":     "REJECTED_INHIBITOR",
-			"risk_class": 0,
+			"id": generateUUID(), "sample_id": sampleQCFailID, "status": "REJECTED_INHIBITOR",
+			"risk_class": 0, "risk_level": "DITOLAK",
 		})
 
-		// f. Add a synthetic case from farm S (simulasi)
-		sampleSID := "smp-s1-c1-" + generateUUID()[:8]
-		taskSID := "task-s1-c1-" + generateUUID()[:8]
+		sampleSID, taskSID := generateUUID(), generateUUID()
 		_ = tx.Put("samples", repository.Record{
-			"id":          sampleSID,
-			"pond_id":     pondS1ID,
-			"sample_code": "SMP-S1-C1",
-			"meta":        map[string]any{"cycle_number": 1},
-			"created_at":  now(),
+			"id": sampleSID, "pond_id": pondS1ID, "sample_code": "SMP-S1-C1",
+			"sampling_date": "2026-09-01", "cycle_day": 30,
+			"meta": map[string]any{"cycle_number": 1}, "created_at": now(),
 		})
 		_ = tx.Put("sample_features", repository.Record{
-			"id":        "feat-" + sampleSID,
-			"sample_id": sampleSID,
-			"ct_ahpnd":  24.5,
-			"do_mg_l":   4.2,
-			"tom_mg_l":  82.0,
+			"id": generateUUID(), "sample_id": sampleSID, "ct_ppc": 19.95,
+			"ct_ahpnd": 24.5, "do_mg_l": 4.2, "tom_mg_l": 82.0,
 		})
 		_ = tx.Put("sdri_results", repository.Record{
-			"id":         "res-" + sampleSID,
-			"sample_id":  sampleSID,
-			"status":     "VALID",
-			"risk_class": 2,
+			"id": generateUUID(), "sample_id": sampleSID, "status": "VALID",
+			"risk_class": 2, "risk_level": "WASPADA_TINGGI",
 		})
 		_ = tx.Put("tasks", repository.Record{
-			"id":               taskSID,
-			"farm_id":          farmSID,
-			"pond_id":          pondS1ID,
-			"source_sample_id": sampleSID,
-			"status":           "selesai",
+			"id": taskSID, "farm_id": farmSID, "pond_id": pondS1ID, "source_sample_id": sampleSID,
+			"status": "selesai", "assignee_id": userAID, "created_by": userAID, "kind": "tindakan",
+			"title": "Tindakan simulasi", "instruction": "Tindakan simulasi sintetik",
+			"due_at": time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 		})
 		_ = tx.Put("task_reports", repository.Record{
-			"id":      "rep-" + taskSID,
-			"task_id": taskSID,
-			"note":    "Tindakan simulasi sintetik",
+			"id": generateUUID(), "task_id": taskSID, "note": "Tindakan simulasi sintetik", "reported_by": userAID,
 		})
 		_ = tx.Put("cycle_outcomes", repository.Record{
-			"id":           "co-s1-c1-" + generateUUID()[:8],
-			"pond_id":      pondS1ID,
-			"cycle_number": 1,
-			"outcome":      "HARVEST_SUCCESS",
+			"id": generateUUID(), "pond_id": pondS1ID, "cycle_number": 1, "outcome": "HARVEST_SUCCESS",
 		})
 
-		// 3. Cycle 2 samples for Pond A1 (current cycle 2): 4 points for trajectory
+		// Current-cycle samples must not enter the historical case base.
 		for i := 1; i <= 4; i++ {
-			smpID := fmt.Sprintf("smp-a1-c2-%d-%s", i, generateUUID()[:8])
+			smpID := generateUUID()
 			_ = tx.Put("samples", repository.Record{
-				"id":            smpID,
-				"pond_id":       pondA1ID,
-				"sample_code":   fmt.Sprintf("SMP-A1-C2-%d", i),
-				"sampling_date": fmt.Sprintf("2026-10-%02d", i*5),
-				"cycle_day":     i * 7,
-				"meta":          map[string]any{"cycle_number": 2},
-				"created_at":    now(),
+				"id": smpID, "pond_id": pondA1ID, "sample_code": fmt.Sprintf("SMP-A1-C2-%d", i),
+				"sampling_date": fmt.Sprintf("2026-10-%02d", i*5), "cycle_day": i * 7,
+				"meta": map[string]any{"cycle_number": 2}, "created_at": now(),
 			})
 			_ = tx.Put("sample_features", repository.Record{
-				"id":           "feat-" + smpID,
-				"sample_id":    smpID,
-				"ct_ahpnd":     22.0,
-				"ct_wssv":      40.0,
-				"ct_ehp":       30.0,
-				"ct_amoa":      28.22,
-				"ct_16s":       18.44,
-				"ct_ppc":       19.95,
-				"do_mg_l":      4.5,
-				"tom_mg_l":     82.0,
-				"ph":           7.8,
-				"salinity_ppt": 22.5,
-				"temp_c":       29.5,
-				"tan_mg_l":     0.5,
-				"no2_mg_l":     0.2,
-				"h2s_mg_l":     0.005,
-				"alkalinity":   120.0,
+				"id": generateUUID(), "sample_id": smpID,
+				"ct_ahpnd": 22.0, "ct_wssv": 40.0, "ct_ehp": 30.0, "ct_amoa": 28.22,
+				"ct_16s": 18.44, "ct_ppc": 19.95, "do_mg_l": 4.5, "tom_mg_l": 82.0,
+				"ph": 7.8, "salinity_ppt": 22.5, "temp_c": 29.5, "tan_mg_l": 0.5,
+				"no2_mg_l": 0.2, "h2s_mg_l": 0.005, "alkalinity": 120.0,
 			})
 			_ = tx.Put("sdri_results", repository.Record{
-				"id":                "res-" + smpID,
-				"sample_id":         smpID,
-				"status":            "VALID",
-				"probability_pct":   36.0,
-				"risk_class":        2,
-				"risk_level":        "WASPADA_TINGGI",
-				"predicted_disease": "AHPND",
-				"disease_name":      "AHPND",
+				"id": generateUUID(), "sample_id": smpID, "status": "VALID", "probability_pct": 36.0,
+				"risk_class": 2, "risk_level": "WASPADA_TINGGI", "predicted_disease": "AHPND", "disease_name": "AHPND",
 			})
 		}
-
 		return nil
 	})
 	if err != nil {
