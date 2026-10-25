@@ -176,3 +176,18 @@ func TestClaudeWriterRequestShape(t *testing.T) {
 		t.Errorf("system prompt harus di-cache: %v", body["system"])
 	}
 }
+
+// Penyangkalan dari mesin ("bukan bukti bebas penyakit") boleh dikutip, tapi klaim penulis sendiri tetap ditolak.
+func TestCheckAllowsMachineNegation(t *testing.T) {
+	f := sampleFacts()
+	f.DiseaseName = "Belum ada indikasi target di atas ambang; bukan bukti bebas penyakit"
+	g := New(nil, nil)
+	quoted, _ := parse(strings.Replace(goodJSON(), "Kolam C4 masuk", "Belum ada indikasi target di atas ambang; bukan bukti bebas penyakit. Kolam C4 masuk", 1))
+	if err := g.Check(quoted, f); err != nil {
+		t.Errorf("kutipan penyangkalan mesin ditolak: %v", err)
+	}
+	claim, _ := parse(strings.Replace(goodJSON(), "Kolam C4 masuk", "Kolam ini bebas penyakit. Kolam C4 masuk", 1))
+	if g.Check(claim, f) == nil {
+		t.Error("klaim bebas penyakit dari penulis harus ditolak")
+	}
+}

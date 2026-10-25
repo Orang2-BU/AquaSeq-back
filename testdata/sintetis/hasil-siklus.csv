@@ -1,0 +1,5 @@
+pond_code,cycle_number,outcome,actual_harvest_kg,outbreak_date,primary_suspect_pathogen,notes
+B1,1,HARVEST_SUCCESS,1840,,,"Panen normal DOC 95, SR baik."
+B2,1,EMERGENCY_HARVEST,920,,AHPND,Panen dini DOC 48 setelah jejak AHPND terus naik dan DO turun.
+B3,1,OUTBREAK,210,2026-10-08,AHPND,Kematian massal DOC 37; panen darurat.
+B4,1,HARVEST_SUCCESS,1510,,,Panen normal; sampel DOC 21 sempat ditolak karena inhibitor gambut.

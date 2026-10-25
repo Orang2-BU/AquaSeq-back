@@ -408,8 +408,16 @@ func (g *Generator) Check(e Explanation, f Facts) error {
 		texts = append(texts, a.Text)
 	}
 	set := g.allowedNumbers(f)
+	// Kalimat dari mesin (nama dugaan, mitigasi) boleh dikutip apa adanya, termasuk penyangkalan seperti
+	// "bukan bukti bebas penyakit"; hanya tulisan penulis yang dipindai kata mutlak.
+	machine := append([]string{f.DiseaseName}, f.MitigationActions...)
 	for _, t := range texts {
 		low := strings.ToLower(t) + " "
+		for _, m := range machine {
+			if m = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(m), ".")); m != "" {
+				low = strings.ReplaceAll(low, m, " ")
+			}
+		}
 		for _, w := range forbidden {
 			if strings.Contains(low, w) {
 				return fmt.Errorf("kata mutlak: %q", strings.TrimSpace(w))

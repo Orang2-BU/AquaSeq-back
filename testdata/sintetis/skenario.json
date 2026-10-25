@@ -1,0 +1,142 @@
+{
+  "label": "DATA SINTETIS - bukan data tambak nyata. Hanya untuk menguji alur, bukan akurasi model.",
+  "stocking_date": "2026-09-01",
+  "ponds": {
+    "B1": {
+      "story": "Stabil sehat: tanpa patogen berarti, amoA tinggi, kimia air aman, Vibrio < 6%.",
+      "samples": [
+        {
+          "sample_code": "B1-D14",
+          "cycle_day": 14,
+          "sampling_date": "2026-09-15"
+        },
+        {
+          "sample_code": "B1-D21",
+          "cycle_day": 21,
+          "sampling_date": "2026-09-22"
+        },
+        {
+          "sample_code": "B1-D28",
+          "cycle_day": 28,
+          "sampling_date": "2026-09-29"
+        },
+        {
+          "sample_code": "B1-D35",
+          "cycle_day": 35,
+          "sampling_date": "2026-10-06"
+        },
+        {
+          "sample_code": "B1-D42",
+          "cycle_day": 42,
+          "sampling_date": "2026-10-13"
+        }
+      ],
+      "outcome": "HARVEST_SUCCESS"
+    },
+    "B2": {
+      "story": "Memburuk pelan: jejak pirA muncul DOC 21 lalu naik, amoA turun, TAN dan TOM naik, Vibrio 4% ke 27%.",
+      "samples": [
+        {
+          "sample_code": "B2-D14",
+          "cycle_day": 14,
+          "sampling_date": "2026-09-15"
+        },
+        {
+          "sample_code": "B2-D21",
+          "cycle_day": 21,
+          "sampling_date": "2026-09-22"
+        },
+        {
+          "sample_code": "B2-D28",
+          "cycle_day": 28,
+          "sampling_date": "2026-09-29"
+        },
+        {
+          "sample_code": "B2-D35",
+          "cycle_day": 35,
+          "sampling_date": "2026-10-06"
+        },
+        {
+          "sample_code": "B2-D42",
+          "cycle_day": 42,
+          "sampling_date": "2026-10-13"
+        }
+      ],
+      "outcome": "EMERGENCY_HARVEST"
+    },
+    "B3": {
+      "story": "Wabah cepat: AHPND melonjak sejak DOC 21, EHP dan jejak WSSV menyusul, DO jatuh, panen darurat DOC 37.",
+      "samples": [
+        {
+          "sample_code": "B3-D14",
+          "cycle_day": 14,
+          "sampling_date": "2026-09-15"
+        },
+        {
+          "sample_code": "B3-D21",
+          "cycle_day": 21,
+          "sampling_date": "2026-09-22"
+        },
+        {
+          "sample_code": "B3-D28",
+          "cycle_day": 28,
+          "sampling_date": "2026-09-29"
+        },
+        {
+          "sample_code": "B3-D35",
+          "cycle_day": 35,
+          "sampling_date": "2026-10-06"
+        }
+      ],
+      "outcome": "OUTBREAK"
+    },
+    "B4": {
+      "story": "Tambak gambut: sampel DOC 21 terhambat inhibitor (PPC 24,6) sehingga ditolak, sampel lain aman.",
+      "samples": [
+        {
+          "sample_code": "B4-D14",
+          "cycle_day": 14,
+          "sampling_date": "2026-09-15"
+        },
+        {
+          "sample_code": "B4-D21",
+          "cycle_day": 21,
+          "sampling_date": "2026-09-22"
+        },
+        {
+          "sample_code": "B4-D28",
+          "cycle_day": 28,
+          "sampling_date": "2026-09-29"
+        },
+        {
+          "sample_code": "B4-D35",
+          "cycle_day": 35,
+          "sampling_date": "2026-10-06"
+        },
+        {
+          "sample_code": "B4-D42",
+          "cycle_day": 42,
+          "sampling_date": "2026-10-13"
+        }
+      ],
+      "outcome": "HARVEST_SUCCESS"
+    }
+  },
+  "expect": {
+    "rejected": [
+      "B4-D21"
+    ],
+    "worst_class_at_least": {
+      "B3": 4,
+      "B2": 2
+    },
+    "max_class_at_most": {
+      "B1": 2,
+      "B4": 2
+    },
+    "vibrio_rising": [
+      "B2",
+      "B3"
+    ]
+  }
+}
